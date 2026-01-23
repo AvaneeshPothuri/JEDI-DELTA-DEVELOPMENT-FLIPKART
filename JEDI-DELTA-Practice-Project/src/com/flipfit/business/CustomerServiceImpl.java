@@ -1,36 +1,30 @@
 package com.flipfit.business;
+import com.flipfit.bean.Booking;
 
-public class CustomerServiceImpl implements CustomerService{
+public class CustomerServiceImpl implements CustomerService {
+    @Override
+    public void viewBookedSlots(int userId) {
+        System.out.println("Displaying booked slots for User: " + userId);
+    }
 
-	@Override
-	public void viewCenters() {
-		// TODO Auto-generated method stub
-		//fetch from DAO
-		
-	}
+    @Override
+    public boolean checkBookingConflicts(int userId, int slotId) {
+        return false; 
+    }
 
-	@Override
-	public void viewBookedSlots(int userId) {
-		// TODO Auto-generated method stub
-		//fetch bookings
-		
-	}
+    @Override
+    public boolean makePayment(int userId, int amount) {
+        System.out.println("Payment of " + amount + " successful for user " + userId);
+        return true;
+    }
 
-	@Override
-	public boolean makeBooking(int userId, int slotId) {
-		// TODO Auto-generated method stub
-		//check availability
-		//reduce seats
-		//create booking
-		return true;
-	}
+    @Override
+    public void editDetails(int userId) {
+        System.out.println("Updating profile for " + userId);
+    }
 
-	@Override
-	public void cancelBooking(int bookingId) {
-		// TODO Auto-generated method stub
-		//restore seat
-		//notify waitlist
-		
-	}
-
+    @Override
+    public java.util.List<Object> viewCentres(String city) {
+        return null; 
+    }
 }

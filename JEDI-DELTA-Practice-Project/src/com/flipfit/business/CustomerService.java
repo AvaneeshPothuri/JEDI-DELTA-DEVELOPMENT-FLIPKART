@@ -1,8 +1,11 @@
 package com.flipfit.business;
+import com.flipfit.bean.Booking;
+import java.util.List;
 
 public interface CustomerService {
-	void viewCenters();
-	void viewBookedSlots(int userId);
-	boolean makeBooking(int userId, int slotId);
-	void cancelBooking(int bookingId);
+    void viewBookedSlots(int userId);
+    boolean checkBookingConflicts(int userId, int slotId);
+    List<Object> viewCentres(String city);
+    boolean makePayment(int userId, int amount);
+    void editDetails(int userId);
 }
