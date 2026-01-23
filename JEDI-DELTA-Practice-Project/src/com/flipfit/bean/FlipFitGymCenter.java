@@ -1,63 +1,39 @@
 package com.flipfit.bean;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class FlipFitGymCenter {
 
-	private int centreId;
-	public int getCentreId() {
-		return centreId;
-	}
-	public void setCentreId(int centreId) {
-		this.centreId = centreId;
-	}
-	public int getOwnerId() {
-		return ownerId;
-	}
-	public void setOwnerId(int ownerId) {
-		this.ownerId = ownerId;
-	}
-	public List<Slot> getSlots() {
-		return slots;
-	}
-	public void setSlots(List<Slot> slots) {
-		this.slots = slots;
-	}
-	public int getCapacity() {
-		return capacity;
-	}
-	public void setCapacity(int capacity) {
-		this.capacity = capacity;
-	}
-	public boolean isApproved() {
-		return approved;
-	}
-	public void setApproved(boolean approved) {
-		this.approved = approved;
-	}
-	public String getCity() {
-		return city;
-	}
-	public void setCity(String city) {
-		this.city = city;
-	}
-	public String getState() {
-		return state;
-	}
-	public void setState(String state) {
-		this.state = state;
-	}
-	public int getPincode() {
-		return pincode;
-	}
-	public void setPincode(int pincode) {
-		this.pincode = pincode;
-	}
-	private int ownerId;
-	private List<Slot> slots;
-	private int capacity;
-	private boolean approved;
-	private String city;
-	private String state;
-	private int pincode;
+    private int centerId;
+    private int ownerId;
+    private int capacity;
+    private boolean approved;
+    private String city;
+    private String state;
+    private int pincode;
+
+    private List<Slot> slots = new ArrayList<>();
+
+    public FlipFitGymCenter(int centerId, String city, String state, int pincode, int capacity) {
+        this.centerId = centerId;
+        this.city = city;
+        this.state = state;
+        this.pincode = pincode;
+        this.capacity = capacity;
+        this.approved = true;
+    }
+
+    public int getCenterId() { return centerId; }
+    public List<Slot> getSlots() { return slots; }
+    public void addSlot(Slot slot) { slots.add(slot); }
+
+    @Override
+    public String toString() {
+        return "CenterId=" + centerId +
+               ", City=" + city +
+               ", State=" + state +
+               ", Pincode=" + pincode +
+               ", Capacity=" + capacity;
+    }
 }

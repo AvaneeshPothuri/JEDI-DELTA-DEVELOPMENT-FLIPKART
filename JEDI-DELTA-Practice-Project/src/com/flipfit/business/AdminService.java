@@ -1,8 +1,17 @@
 package com.flipfit.business;
 
 public interface AdminService {
-    boolean validateOwner(int ownerId);
-    void viewFFCustomers();
+
+    // From diagram
+    void login();
+    void validateOwner(int ownerId);
     void deleteOwner(int ownerId);
-    boolean login(String username, String password);
+    void viewFFCustomers();
+
+    // REQUIRED by assignment
+    void addGymCenter(int centerId, String city, String state, int pincode, int capacity);
+    void viewGymCenters();
+
+    void addSlotInfo(int centerId, int slotId, int startTime, int seats);
+    void viewSlots(int centerId);
 }
