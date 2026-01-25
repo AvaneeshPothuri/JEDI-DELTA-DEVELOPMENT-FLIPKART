@@ -56,4 +56,14 @@ public class BookingDAO {
             }
         }
     }
+
+    public List<Booking> getBookingsBySlotId(int slotId) {
+        List<Booking> slotBookings = new ArrayList<>();
+        for (Booking booking : bookings) {
+            if (booking.getSlotId() == slotId && !booking.isDeleted()) {
+                slotBookings.add(booking);
+            }
+        }
+        return slotBookings;
+    }
 }

@@ -1,5 +1,7 @@
 package com.flipfit.business;
 
+import com.flipfit.bean.FlipFitCustomer;
+
 public interface AdminService {
 
     // From diagram
@@ -14,4 +16,7 @@ public interface AdminService {
 
     void addSlotInfo(int centerId, int slotId, int startTime, int seats);
     void viewSlots(int centerId);
+
+    // Utility: lookup customer by id
+    FlipFitCustomer getCustomerById(int userId);
 }

@@ -8,6 +8,7 @@ public class SlotDAO {
 
     private static SlotDAO instance = null;
     private final List<Slot> slots = new ArrayList<>();
+    private int nextSlotId = 1001;
 
     private SlotDAO() {}
 
@@ -40,4 +41,13 @@ public class SlotDAO {
         }
         return null;
     }
+
+    public List<Slot> getAllSlots() {
+        return new ArrayList<>(slots);
+    }
+
+    public int getNextSlotId() {
+        return nextSlotId++;
+    }
 }
+
