@@ -65,6 +65,10 @@ public class Slot {
     private int totalSeats;
     private int fee;
 
+    public  Slot(){
+
+    }
+
     public Slot(int slotId, int centerId, LocalDate date, String startTime, String endTime, int seatsAvailable) {
         this.slotId = slotId;
         this.centerId = centerId;
