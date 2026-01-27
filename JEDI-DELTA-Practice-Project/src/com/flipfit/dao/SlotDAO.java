@@ -11,9 +11,9 @@ public class SlotDAO {
     private static SlotDAO instance = null;
 
     // Database credentials (matching your WaitlistDAO style)
-    private final String URL = "jdbc:mysql://localhost:3306/flipfit_db";
+    private final String URL = "jdbc:mysql://localhost:3306/Flipfit";
     private final String USER = "root";
-    private final String PASS = "password";
+    private final String PASS = "Password@123";
 
     private SlotDAO() {}
 

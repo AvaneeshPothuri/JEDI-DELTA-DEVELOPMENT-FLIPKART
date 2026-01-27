@@ -28,17 +28,18 @@ public class GymCentreDAO {
     }
 
     public void addGymCentre(FlipFitGymCenter gymCentre) {
-        String sql = "INSERT INTO GymCentreTable (centreid, ownerid, gymName, city, state, pincode, isApproved,) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO GymCentreTable (centreid, ownerid, gymName, city, state, pincode, capacity, isApproved) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, gymCentre.getCenterId());
             pstmt.setInt(2, gymCentre.getOwnerId());
-            pstmt.setString(3, gymCentre.getgymName());
+            pstmt.setString(3, gymCentre.getGymName());
             pstmt.setString(4, gymCentre.getCity());
             pstmt.setString(5, gymCentre.getState());
             pstmt.setInt(6, gymCentre.getPincode());
-            pstmt.setInt(7, 0);
+            pstmt.setInt(7, gymCentre.getCapacity());
+            pstmt.setBoolean(8, gymCentre.isApproved());
 
             pstmt.executeUpdate();
             System.out.println("Gym Center added to database successfully.");
@@ -57,13 +58,14 @@ public class GymCentreDAO {
 
             while (rs.next()) {
                 FlipFitGymCenter center = new FlipFitGymCenter(
-                        rs.getInt("centreid"),
-                        rs.getInt("ownerid"),
-                        rs.getString("gymName"),
-                        rs.getString("city"),
-                        rs.getString("state"),
-                        rs.getInt("pincode"),
+                    rs.getInt("centreid"),
+                    rs.getString("gymName"),
+                    rs.getString("city"),
+                    rs.getString("state"),
+                    rs.getInt("pincode"),
+                    rs.getInt("capacity")
                 );
+                center.setOwnerId(rs.getInt("ownerid"));
                 centers.add(center);
             }
         } catch (SQLException e) {
@@ -81,14 +83,16 @@ public class GymCentreDAO {
             pstmt.setInt(1, centreId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return new FlipFitGymCenter(
+                        FlipFitGymCenter center = new FlipFitGymCenter(
                             rs.getInt("centreid"),
-                            rs.getInt("ownerid"),
                             rs.getString("gymName"),
                             rs.getString("city"),
                             rs.getString("state"),
                             rs.getInt("pincode"),
-                    );
+                            rs.getInt("capacity")
+                        );
+                        center.setOwnerId(rs.getInt("ownerid"));
+                        return center;
                 }
             }
         } catch (SQLException e) {
