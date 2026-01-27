@@ -1,117 +1,186 @@
 package com.flipfit.dao;
 
 import com.flipfit.bean.Slot;
+import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 public class SlotDAO {
 
-	private static SlotDAO instance = null;
-	private final List<Slot> slots = new ArrayList<>();
-	private int nextSlotId = 1001;
+    private static SlotDAO instance = null;
 
-	private SlotDAO() {
-	}
+    // Database credentials (matching your WaitlistDAO style)
+    private final String URL = "jdbc:mysql://localhost:3306/flipfit_db";
+    private final String USER = "root";
+    private final String PASS = "password";
 
-	public static SlotDAO getInstance() {
-		if (instance == null) {
-			instance = new SlotDAO();
-		}
-		return instance;
-	}
+    private SlotDAO() {}
 
-	public void addSlot(Slot slot) {
-		slots.add(slot);
-	}
+    public static synchronized SlotDAO getInstance() {
+        if (instance == null) {
+            instance = new SlotDAO();
+        }
+        return instance;
+    }
 
-	public List<Slot> getSlotsByCenterId(int centerId) {
-		List<Slot> centerSlots = new ArrayList<>();
-		for (Slot slot : slots) {
-			if (slot.getCenterId() == centerId) {
-				centerSlots.add(slot);
-			}
-		}
-		return centerSlots;
-	}
+    private Connection getConnection() throws SQLException {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            return DriverManager.getConnection(URL, USER, PASS);
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("JDBC Driver not found", e);
+        }
+    }
 
-	public Slot getSlotById(int slotId) {
-		for (Slot slot : slots) {
-			if (slot.getSlotId() == slotId) {
-				return slot;
-			}
-		}
-		return null;
-	}
+    public void addSlot(Slot slot) {
+        String query = "INSERT INTO slots (slotId, centerId, slotDate, startTime, totalSeats, availableSeats) VALUES (?, ?, ?, ?, ?, ?)";
+        try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, slot.getSlotId());
+            stmt.setInt(2, slot.getCenterId());
+            stmt.setDate(3, Date.valueOf(slot.getDate()));
+            stmt.setTime(4, Time.valueOf(slot.getStartTime()));
+            stmt.setInt(5, slot.getTotalSeats());
+            stmt.setInt(6, slot.getSeatsAvailable());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
-	public Slot getSlotById(int userId, int slotId, int centerId) {
-		for (Slot slot : slots) {
-			if (slot.getSlotId() == slotId && slot.getCenterId() == centerId) {
-				return slot;
-			}
-		}
-		return null;
-	}
+    public List<Slot> getSlotsByCenterId(int centerId) {
+        List<Slot> centerSlots = new ArrayList<>();
+        String query = "SELECT * FROM slots WHERE centerId = ?";
+        try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, centerId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                centerSlots.add(mapResultSetToSlot(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return centerSlots;
+    }
 
-	public List<Slot> getAllSlots() {
-		return new ArrayList<>(slots);
-	}
+    public Slot getSlotById(int slotId) {
+        String query = "SELECT * FROM slots WHERE slotId = ?";
+        try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, slotId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return mapResultSetToSlot(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
-	public int getNextSlotId() {
-		return nextSlotId++;
-	}
+    public Slot getSlotById(int userId, int slotId, int centerId) {
+        // userId isn't typically in the slot table, but centerId check is included as requested
+        String query = "SELECT * FROM slots WHERE slotId = ? AND centerId = ?";
+        try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, slotId);
+            stmt.setInt(2, centerId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return mapResultSetToSlot(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
-	/**
-	 * Get available slots for a specific center and date
-	 */
-	public List<Slot> getAvailableSlotsByDateAndCenter(int centerId, LocalDate date) {
-		List<Slot> availableSlots = new ArrayList<>();
-		for (Slot slot : slots) {
-			if (slot.getCenterId() == centerId && slot.getDate().equals(date) && slot.getSeatsAvailable() > 0
-					&& !slot.isExpired()) {
-				availableSlots.add(slot);
-			}
-		}
-		return availableSlots;
-	}
+    public List<Slot> getAllSlots() {
+        List<Slot> slots = new ArrayList<>();
+        String query = "SELECT * FROM slots";
+        try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery(query);
+            while (rs.next()) {
+                slots.add(mapResultSetToSlot(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return slots;
+    }
 
-	/**
-	 * Get full slots for a specific center and date (for waitlist)
-	 */
-	public List<Slot> getFullSlotsByDateAndCenter(int centerId, LocalDate date) {
-		List<Slot> fullSlots = new ArrayList<>();
-		for (Slot slot : slots) {
-			if (slot.getCenterId() == centerId && slot.getDate().equals(date) && slot.isFull()) {
-				fullSlots.add(slot);
-			}
-		}
-		return fullSlots;
-	}
+    public List<Slot> getAvailableSlotsByDateAndCenter(int centerId, LocalDate date) {
+        List<Slot> availableSlots = new ArrayList<>();
+        // Checks seats > 0 and date/time not passed
+        String query = "SELECT * FROM slots WHERE centerId = ? AND slotDate = ? AND availableSeats > 0 AND (slotDate > CURRENT_DATE OR (slotDate = CURRENT_DATE AND startTime > CURRENT_TIME))";
+        try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, centerId);
+            stmt.setDate(2, Date.valueOf(date));
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                availableSlots.add(mapResultSetToSlot(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return availableSlots;
+    }
 
-	/**
-	 * Get expired slots
-	 */
-	public List<Slot> getExpiredSlots() {
-		List<Slot> expiredSlots = new ArrayList<>();
-		for (Slot slot : slots) {
-			if (slot.isExpired()) {
-				expiredSlots.add(slot);
-			}
-		}
-		return expiredSlots;
-	}
+    public List<Slot> getFullSlotsByDateAndCenter(int centerId, LocalDate date) {
+        List<Slot> fullSlots = new ArrayList<>();
+        String query = "SELECT * FROM slots WHERE centerId = ? AND slotDate = ? AND availableSeats = 0";
+        try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, centerId);
+            stmt.setDate(2, Date.valueOf(date));
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                fullSlots.add(mapResultSetToSlot(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return fullSlots;
+    }
 
-	/**
-	 * Get slots by center for a specific date range
-	 */
-	public List<Slot> getSlotsByDateRange(int centerId, LocalDate startDate, LocalDate endDate) {
-		List<Slot> rangeSlots = new ArrayList<>();
-		for (Slot slot : slots) {
-			if (slot.getCenterId() == centerId && !slot.getDate().isBefore(startDate)
-					&& !slot.getDate().isAfter(endDate)) {
-				rangeSlots.add(slot);
-			}
-		}
-		return rangeSlots;
-	}
+    public List<Slot> getExpiredSlots() {
+        List<Slot> expiredSlots = new ArrayList<>();
+        String query = "SELECT * FROM slots WHERE slotDate < CURRENT_DATE OR (slotDate = CURRENT_DATE AND startTime < CURRENT_TIME)";
+        try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery(query);
+            while (rs.next()) {
+                expiredSlots.add(mapResultSetToSlot(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return expiredSlots;
+    }
+
+    public List<Slot> getSlotsByDateRange(int centerId, LocalDate startDate, LocalDate endDate) {
+        List<Slot> rangeSlots = new ArrayList<>();
+        String query = "SELECT * FROM slots WHERE centerId = ? AND slotDate BETWEEN ? AND ?";
+        try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, centerId);
+            stmt.setDate(2, Date.valueOf(startDate));
+            stmt.setDate(3, Date.valueOf(endDate));
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                rangeSlots.add(mapResultSetToSlot(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return rangeSlots;
+    }
+
+
+//     Helper method to reduce code duplication
+    private Slot mapResultSetToSlot(ResultSet rs) throws SQLException {
+        Slot slot = new Slot();
+        slot.setSlotId(rs.getInt("slotId"));
+        slot.setCenterId(rs.getInt("centerId"));
+        slot.setDate(rs.getDate("slotDate").toLocalDate());
+        slot.setStartTime(String.valueOf(rs.getTime("startTime").toLocalTime()));
+        slot.setTotalSeats(rs.getInt("totalSeats"));
+        slot.setSeatsAvailable(rs.getInt("availableSeats"));
+        return slot;
+    }
 }
